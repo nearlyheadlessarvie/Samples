@@ -57,6 +57,22 @@ namespace IdentityServerAspNetIdentity
                 })
                 .AddAspNetIdentity<IdentityUser>();
 
+            services.AddAuthentication()
+                .AddOpenIdConnect("Google", "Sign in with Google", options =>
+                {
+                    options.SignInScheme = IdentityConstants.ExternalScheme;
+                    options.ForwardSignOut = IdentityConstants.ApplicationScheme;
+
+                    options.Authority = Configuration.GetValue<string>("Google:Authority");
+                    options.ClientId = Configuration.GetValue<string>("Google:ClientId");
+                    options.ClientSecret = Configuration.GetValue<string>("Google:ClientSecret");
+                    options.CallbackPath = Configuration.GetValue<string>("Google:CallbackPath");
+                    foreach (var scope in Configuration.GetValue<string>("Google:Scopes")?.Split(" "))
+                    {
+                        options.Scope.Add(scope);
+                    }
+                });
+
             services.AddLogging(options =>
             {
                 options.AddFilter("Duende", LogLevel.Debug);

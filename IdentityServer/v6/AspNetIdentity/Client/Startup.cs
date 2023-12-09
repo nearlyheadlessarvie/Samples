@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +39,44 @@ namespace Client
                     options.ClientId = "client";
                     options.MapInboundClaims = false;
                     options.SaveTokens = true;
+
+                    options.Events.OnRedirectToIdentityProvider = n =>
+                    {
+
+                        if (n.Properties.Items.TryGetValue(OpenIdConnectParameterNames.LoginHint, out var loginHint) && !string.IsNullOrEmpty(loginHint))
+                        {
+                            n.ProtocolMessage.LoginHint = loginHint;
+                        }
+
+                        if (n.Properties.Items.TryGetValue(OpenIdConnectParameterNames.Prompt, out var prompt) && !string.IsNullOrEmpty(prompt))
+                        {
+                            n.ProtocolMessage.Prompt = prompt;
+                        }
+
+                        if (n.Properties.Items.TryGetValue(OpenIdConnectParameterNames.IdentityProvider, out var idp) && !string.IsNullOrEmpty(idp))
+                        {
+                            n.ProtocolMessage.AcrValues += $" idp:{idp}";
+                        }
+
+
+                        return Task.CompletedTask;
+                    };
+                    options.Events.OnRedirectToIdentityProviderForSignOut = async n =>
+                    {
+                        if (await n.HttpContext.GetTokenAsync(OpenIdConnectParameterNames.IdToken) is string idToken)
+                        {
+                            n.ProtocolMessage.IdTokenHint = idToken;
+                        }
+                        else if (n.Properties.GetTokenValue(OpenIdConnectParameterNames.IdToken) is string idTokenParameter)
+                        {
+                            n.ProtocolMessage.IdTokenHint = idTokenParameter;
+                        }
+
+                        if (n.Properties.GetParameter<string>(OpenIdConnectParameterNames.State) is string state)
+                        {
+                            n.ProtocolMessage.State = state;
+                        }
+                    };
                 });
         }
 

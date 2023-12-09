@@ -208,3 +208,4 @@ Users.db
 *.db-shm
 *.db-wal
 .angular/
+/IdentityServer/v6/AspNetIdentity/IdentityServerAspNetIdentity/Users.db
